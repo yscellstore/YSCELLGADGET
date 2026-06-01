@@ -47,7 +47,7 @@ const newsData = [
         title: "VIVO X300 ULTRA",
         desc: "Vivo X300 Ultra adalah ponsel flagship kelas atas yang menonjolkan kemampuan kamera dan performa papan atas.",
         detail: "LayarLTPO AMOLED 6,82 inci, resolusi 2K (1440 x 3168 piksel), refresh rate 144Hz, HDR10+Sistem OperasiAndroid 16, dilapisi OriginOS 6,ChipsetQualcomm Snapdragon 8 Elite Gen 5 (3nm),RAM: 12GB / 16GB  Memori Internal: 256GB / 512GB / 1TB (UFS 4.1), Baterai & Pengisian:6600 mAh (BlueVolt Battery), Fast Charging 100W, Wireless Charging 40W,DurabilitasSertifikasi:IP68/IP69 (tahan air dan debu),Kamera Utama: 200 MP, lensa Zeiss setara 35mm (sensor 1/1,2 inci), Kamera Ultrawide: 50 MP, setara 14mm, Kamera Telefoto/Periskop: 200 MP, setara 85mm dengan teknologi Zeiss APO, Kamera Depan: 50 MP (mendukung perekaman video hingga 4K 60fps),Material: Armor Glass pada bagian layar dan punggung, frame aluminium, Dimensi/Bobot: 163 x 76,8 x 8,2 mm / 232 gramFitur Tambahan: Konektivitas 5G, pemindai sidik jari ultrasonik di dalam layar, mendukung aksesori Photography Kit dan lensa eksternal Zeiss.",
-        image: "https://mature-tan-yydgrc4n.edgeone.app/vivo-X300-Ultra-3.jpg"
+        image: "https://cdn.phototourl.com/free/2026-06-01-3526ba5d-1c9e-4dc7-b3d5-e78b329610e4.jpg"
     }
 ];
 

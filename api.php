@@ -1,481 +1,568 @@
 <?php
-// =====================================================
-// YSCELLGADGET CMS - COMPATIBLE API
-// =====================================================
+/**
+ * YSCELLGADGET CMS - REST API
+ * File: api.php
+ */
 
-// Header untuk JSON
-header('Content-Type: application/json');
+require_once 'config.php';
 
-// Matikan semua error
-error_reporting(0);
-
-// Koneksi database
-$host = 'localhost';
-$user = 'root';
-$pass = '';
-$db = 'yscellgadget_cms';
-
-$conn = mysqli_connect($host, $user, $pass, $db);
-
-// Cek koneksi
-if (!$conn) {
-    echo json_encode(array('error' => 'Database connection failed: ' . mysqli_connect_error()));
-    exit();
-}
-
-// Set charset
-mysqli_set_charset($conn, 'utf8');
-
-// Ambil parameter dengan cara aman
-$endpoint = '';
-if (isset($_GET['endpoint'])) {
-    $endpoint = $_GET['endpoint'];
-}
-
-$id = 0;
-if (isset($_GET['id'])) {
-    $id = (int)$_GET['id'];
-}
-
-$method = $_SERVER['REQUEST_METHOD'];
-
-// ==================== FUNGSI ====================
-function sendJSON($data, $status = 200) {
-    http_response_code($status);
-    echo json_encode($data);
-    exit();
-}
-
-// ==================== ENDPOINTS ====================
-
-// GET BERITA
-if ($endpoint == 'berita' && $method == 'GET') {
-    if ($id > 0) {
-        $sql = "SELECT * FROM berita WHERE id = $id";
-    } else {
-        $sql = "SELECT * FROM berita ORDER BY id DESC";
-    }
-    $result = mysqli_query($conn, $sql);
-    $data = array();
-    while ($row = mysqli_fetch_assoc($result)) {
-        $data[] = $row;
-    }
-    sendJSON($data);
-}
-
-// POST BERITA
-elseif ($endpoint == 'berita' && $method == 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
+class API {
+    private $db;
+    private $method;
+    private $endpoint;
+    private $id;
     
-    $title = '';
-    if (isset($input['title'])) {
-        $title = mysqli_real_escape_string($conn, $input['title']);
+    public function __construct() {
+        $this->db = Database::getInstance();
+        $this->method = $_SERVER['REQUEST_METHOD'];
+        $this->parseEndpoint();
     }
     
-    $desc = '';
-    if (isset($input['description'])) {
-        $desc = mysqli_real_escape_string($conn, $input['description']);
-    }
-    
-    $detail = '';
-    if (isset($input['detail'])) {
-        $detail = mysqli_real_escape_string($conn, $input['detail']);
-    }
-    
-    $image = '';
-    if (isset($input['image_url'])) {
-        $image = mysqli_real_escape_string($conn, $input['image_url']);
-    }
-    
-    $sql = "INSERT INTO berita (title, description, detail, image_url) 
-            VALUES ('$title', '$desc', '$detail', '$image')";
-    
-    if (mysqli_query($conn, $sql)) {
-        sendJSON(array('success' => true, 'id' => mysqli_insert_id($conn)));
-    } else {
-        sendJSON(array('success' => false, 'error' => mysqli_error($conn)), 500);
-    }
-}
-
-// UPDATE BERITA
-elseif ($endpoint == 'berita' && $method == 'PUT' && $id > 0) {
-    $input = json_decode(file_get_contents('php://input'), true);
-    
-    $title = '';
-    if (isset($input['title'])) {
-        $title = mysqli_real_escape_string($conn, $input['title']);
-    }
-    
-    $desc = '';
-    if (isset($input['description'])) {
-        $desc = mysqli_real_escape_string($conn, $input['description']);
-    }
-    
-    $detail = '';
-    if (isset($input['detail'])) {
-        $detail = mysqli_real_escape_string($conn, $input['detail']);
-    }
-    
-    $image = '';
-    if (isset($input['image_url'])) {
-        $image = mysqli_real_escape_string($conn, $input['image_url']);
-    }
-    
-    $sql = "UPDATE berita SET 
-            title = '$title', 
-            description = '$desc', 
-            detail = '$detail', 
-            image_url = '$image' 
-            WHERE id = $id";
-    
-    if (mysqli_query($conn, $sql)) {
-        sendJSON(array('success' => true));
-    } else {
-        sendJSON(array('success' => false, 'error' => mysqli_error($conn)), 500);
-    }
-}
-
-// DELETE BERITA
-elseif ($endpoint == 'berita' && $method == 'DELETE' && $id > 0) {
-    $sql = "DELETE FROM berita WHERE id = $id";
-    if (mysqli_query($conn, $sql)) {
-        sendJSON(array('success' => true));
-    } else {
-        sendJSON(array('success' => false, 'error' => mysqli_error($conn)), 500);
-    }
-}
-
-// ==================== REVIEW ====================
-
-// GET REVIEW
-elseif ($endpoint == 'review' && $method == 'GET') {
-    if ($id > 0) {
-        $sql = "SELECT * FROM review WHERE id = $id";
-    } else {
-        $sql = "SELECT * FROM review ORDER BY id DESC";
-    }
-    $result = mysqli_query($conn, $sql);
-    $data = array();
-    while ($row = mysqli_fetch_assoc($result)) {
-        $data[] = $row;
-    }
-    sendJSON($data);
-}
-
-// POST REVIEW
-elseif ($endpoint == 'review' && $method == 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
-    
-    $title = '';
-    if (isset($input['title'])) {
-        $title = mysqli_real_escape_string($conn, $input['title']);
-    }
-    
-    $rating = 4.0;
-    if (isset($input['rating'])) {
-        $rating = (float)$input['rating'];
-    }
-    
-    $review_text = '';
-    if (isset($input['review_text'])) {
-        $review_text = mysqli_real_escape_string($conn, $input['review_text']);
-    }
-    
-    $detail = '';
-    if (isset($input['detail'])) {
-        $detail = mysqli_real_escape_string($conn, $input['detail']);
-    }
-    
-    $image = '';
-    if (isset($input['image_url'])) {
-        $image = mysqli_real_escape_string($conn, $input['image_url']);
-    }
-    
-    $sql = "INSERT INTO review (title, rating, review_text, detail, image_url) 
-            VALUES ('$title', $rating, '$review_text', '$detail', '$image')";
-    
-    if (mysqli_query($conn, $sql)) {
-        sendJSON(array('success' => true, 'id' => mysqli_insert_id($conn)));
-    } else {
-        sendJSON(array('success' => false, 'error' => mysqli_error($conn)), 500);
-    }
-}
-
-// UPDATE REVIEW
-elseif ($endpoint == 'review' && $method == 'PUT' && $id > 0) {
-    $input = json_decode(file_get_contents('php://input'), true);
-    
-    $title = '';
-    if (isset($input['title'])) {
-        $title = mysqli_real_escape_string($conn, $input['title']);
-    }
-    
-    $rating = 4.0;
-    if (isset($input['rating'])) {
-        $rating = (float)$input['rating'];
-    }
-    
-    $review_text = '';
-    if (isset($input['review_text'])) {
-        $review_text = mysqli_real_escape_string($conn, $input['review_text']);
-    }
-    
-    $detail = '';
-    if (isset($input['detail'])) {
-        $detail = mysqli_real_escape_string($conn, $input['detail']);
-    }
-    
-    $image = '';
-    if (isset($input['image_url'])) {
-        $image = mysqli_real_escape_string($conn, $input['image_url']);
-    }
-    
-    $sql = "UPDATE review SET 
-            title = '$title', 
-            rating = $rating, 
-            review_text = '$review_text', 
-            detail = '$detail', 
-            image_url = '$image' 
-            WHERE id = $id";
-    
-    if (mysqli_query($conn, $sql)) {
-        sendJSON(array('success' => true));
-    } else {
-        sendJSON(array('success' => false, 'error' => mysqli_error($conn)), 500);
-    }
-}
-
-// DELETE REVIEW
-elseif ($endpoint == 'review' && $method == 'DELETE' && $id > 0) {
-    $sql = "DELETE FROM review WHERE id = $id";
-    if (mysqli_query($conn, $sql)) {
-        sendJSON(array('success' => true));
-    } else {
-        sendJSON(array('success' => false, 'error' => mysqli_error($conn)), 500);
-    }
-}
-
-// ==================== TREND ====================
-
-// GET TREND
-elseif ($endpoint == 'trend' && $method == 'GET') {
-    if ($id > 0) {
-        $sql = "SELECT * FROM trend WHERE id = $id";
-    } else {
-        $sql = "SELECT * FROM trend ORDER BY id DESC";
-    }
-    $result = mysqli_query($conn, $sql);
-    $data = array();
-    while ($row = mysqli_fetch_assoc($result)) {
-        $data[] = $row;
-    }
-    sendJSON($data);
-}
-
-// POST TREND
-elseif ($endpoint == 'trend' && $method == 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
-    
-    $icon = 'fas fa-robot';
-    if (isset($input['icon'])) {
-        $icon = mysqli_real_escape_string($conn, $input['icon']);
-    }
-    
-    $title = '';
-    if (isset($input['title'])) {
-        $title = mysqli_real_escape_string($conn, $input['title']);
-    }
-    
-    $number = '';
-    if (isset($input['trend_number'])) {
-        $number = mysqli_real_escape_string($conn, $input['trend_number']);
-    }
-    
-    $desc = '';
-    if (isset($input['description'])) {
-        $desc = mysqli_real_escape_string($conn, $input['description']);
-    }
-    
-    $sql = "INSERT INTO trend (icon, title, trend_number, description) 
-            VALUES ('$icon', '$title', '$number', '$desc')";
-    
-    if (mysqli_query($conn, $sql)) {
-        sendJSON(array('success' => true, 'id' => mysqli_insert_id($conn)));
-    } else {
-        sendJSON(array('success' => false, 'error' => mysqli_error($conn)), 500);
-    }
-}
-
-// UPDATE TREND
-elseif ($endpoint == 'trend' && $method == 'PUT' && $id > 0) {
-    $input = json_decode(file_get_contents('php://input'), true);
-    
-    $icon = 'fas fa-robot';
-    if (isset($input['icon'])) {
-        $icon = mysqli_real_escape_string($conn, $input['icon']);
-    }
-    
-    $title = '';
-    if (isset($input['title'])) {
-        $title = mysqli_real_escape_string($conn, $input['title']);
-    }
-    
-    $number = '';
-    if (isset($input['trend_number'])) {
-        $number = mysqli_real_escape_string($conn, $input['trend_number']);
-    }
-    
-    $desc = '';
-    if (isset($input['description'])) {
-        $desc = mysqli_real_escape_string($conn, $input['description']);
-    }
-    
-    $sql = "UPDATE trend SET 
-            icon = '$icon', 
-            title = '$title', 
-            trend_number = '$number', 
-            description = '$desc' 
-            WHERE id = $id";
-    
-    if (mysqli_query($conn, $sql)) {
-        sendJSON(array('success' => true));
-    } else {
-        sendJSON(array('success' => false, 'error' => mysqli_error($conn)), 500);
-    }
-}
-
-// DELETE TREND
-elseif ($endpoint == 'trend' && $method == 'DELETE' && $id > 0) {
-    $sql = "DELETE FROM trend WHERE id = $id";
-    if (mysqli_query($conn, $sql)) {
-        sendJSON(array('success' => true));
-    } else {
-        sendJSON(array('success' => false, 'error' => mysqli_error($conn)), 500);
-    }
-}
-
-// ==================== AUTHENTICATION ====================
-
-// LOGIN
-elseif ($endpoint == 'login' && $method == 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
-    
-    $username = '';
-    if (isset($input['username'])) {
-        $username = mysqli_real_escape_string($conn, $input['username']);
-    }
-    
-    $password = '';
-    if (isset($input['password'])) {
-        $password = $input['password'];
-    }
-    
-    $sql = "SELECT * FROM admin WHERE username = '$username'";
-    $result = mysqli_query($conn, $sql);
-    $admin = mysqli_fetch_assoc($result);
-    
-    if ($admin && password_verify($password, $admin['password'])) {
-        $token = bin2hex(random_bytes(32));
-        $sql = "UPDATE admin SET session_token = '$token', last_login = NOW() WHERE id = " . $admin['id'];
-        mysqli_query($conn, $sql);
+    private function parseEndpoint() {
+        $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        $parts = explode('/', trim($path, '/'));
         
-        sendJSON(array(
+        // Cari api.php dalam array
+        $api_index = array_search('api.php', $parts);
+        if ($api_index !== false) {
+            $this->endpoint = $parts[$api_index + 1] ?? '';
+            $this->id = $parts[$api_index + 2] ?? null;
+        }
+        
+        // Jika masih kosong, cek parameter endpoint
+        if (empty($this->endpoint) && isset($_GET['endpoint'])) {
+            $this->endpoint = $_GET['endpoint'];
+            $this->id = $_GET['id'] ?? null;
+        }
+    }
+    
+    public function handle() {
+        try {
+            // Cek autentikasi untuk endpoint tertentu
+            $public_endpoints = ['login', 'check-session'];
+            
+            if (!in_array($this->endpoint, $public_endpoints)) {
+                $this->checkAuth();
+            }
+            
+            switch ($this->method) {
+                case 'GET':
+                    $this->handleGet();
+                    break;
+                case 'POST':
+                    $this->handlePost();
+                    break;
+                case 'PUT':
+                    $this->handlePut();
+                    break;
+                case 'DELETE':
+                    $this->handleDelete();
+                    break;
+                default:
+                    sendError('Method not allowed', 405);
+            }
+        } catch (Exception $e) {
+            sendError($e->getMessage(), 500);
+        }
+    }
+    
+    private function checkAuth() {
+        $headers = getallheaders();
+        $token = $headers['Authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+        
+        if (empty($token)) {
+            sendError('Unauthorized - Token required', 401);
+        }
+        
+        $username = validateToken($token);
+        if (!$username) {
+            sendError('Invalid or expired token', 401);
+        }
+        
+        // Set current admin ID
+        $admin = $this->db->getRow(
+            "SELECT id FROM admin WHERE username = ?",
+            [$username]
+        );
+        
+        if (!$admin) {
+            sendError('Admin not found', 401);
+        }
+        
+        global $current_admin_id;
+        $current_admin_id = $admin['id'];
+        $_SESSION['admin_id'] = $admin['id'];
+    }
+    
+    private function handleGet() {
+        switch ($this->endpoint) {
+            case 'berita':
+                if ($this->id) {
+                    $this->getBeritaById();
+                } else {
+                    $this->getAllBerita();
+                }
+                break;
+            case 'review':
+                if ($this->id) {
+                    $this->getReviewById();
+                } else {
+                    $this->getAllReview();
+                }
+                break;
+            case 'trend':
+                if ($this->id) {
+                    $this->getTrendById();
+                } else {
+                    $this->getAllTrend();
+                }
+                break;
+            case 'backup':
+                $this->getBackup();
+                break;
+            case 'stats':
+                $this->getStats();
+                break;
+            default:
+                sendError('Endpoint not found', 404);
+        }
+    }
+    
+    private function handlePost() {
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        switch ($this->endpoint) {
+            case 'login':
+                $this->login($data);
+                break;
+            case 'logout':
+                $this->logout();
+                break;
+            case 'check-session':
+                $this->checkSession($data);
+                break;
+            case 'berita':
+                $this->createBerita($data);
+                break;
+            case 'review':
+                $this->createReview($data);
+                break;
+            case 'trend':
+                $this->createTrend($data);
+                break;
+            case 'reset-default':
+                $this->resetToDefault();
+                break;
+            default:
+                sendError('Endpoint not found', 404);
+        }
+    }
+    
+    private function handlePut() {
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        switch ($this->endpoint) {
+            case 'berita':
+                if ($this->id) {
+                    $this->updateBerita($this->id, $data);
+                } else {
+                    sendError('ID required', 400);
+                }
+                break;
+            case 'review':
+                if ($this->id) {
+                    $this->updateReview($this->id, $data);
+                } else {
+                    sendError('ID required', 400);
+                }
+                break;
+            case 'trend':
+                if ($this->id) {
+                    $this->updateTrend($this->id, $data);
+                } else {
+                    sendError('ID required', 400);
+                }
+                break;
+            default:
+                sendError('Endpoint not found', 404);
+        }
+    }
+    
+    private function handleDelete() {
+        switch ($this->endpoint) {
+            case 'berita':
+                if ($this->id) {
+                    $this->deleteBerita($this->id);
+                } else {
+                    sendError('ID required', 400);
+                }
+                break;
+            case 'review':
+                if ($this->id) {
+                    $this->deleteReview($this->id);
+                } else {
+                    sendError('ID required', 400);
+                }
+                break;
+            case 'trend':
+                if ($this->id) {
+                    $this->deleteTrend($this->id);
+                } else {
+                    sendError('ID required', 400);
+                }
+                break;
+            default:
+                sendError('Endpoint not found', 404);
+        }
+    }
+    
+    // ==================================================
+    // AUTHENTICATION METHODS
+    // ==================================================
+    
+    private function login($data) {
+        $username = $data['username'] ?? '';
+        $password = $data['password'] ?? '';
+        
+        if (empty($username) || empty($password)) {
+            sendError('Username and password required', 400);
+        }
+        
+        $admin = $this->db->getRow(
+            "SELECT id, username, password FROM admin WHERE username = ?",
+            [$username]
+        );
+        
+        if (!$admin) {
+            sendError('Invalid credentials', 401);
+        }
+        
+        // Verifikasi password (bcrypt)
+        if (!password_verify($password, $admin['password'])) {
+            sendError('Invalid credentials', 401);
+        }
+        
+        // Update last login
+        $this->db->executeQuery(
+            "UPDATE admin SET last_login = NOW() WHERE id = ?",
+            [$admin['id']]
+        );
+        
+        // Generate token (format: username_timestamp)
+        $token = $admin['username'] . '_' . time();
+        
+        sendResponse([
             'success' => true,
             'token' => $token,
-            'username' => $admin['username']
-        ));
-    } else {
-        sendJSON(array('success' => false, 'error' => 'Invalid credentials'), 401);
+            'username' => $admin['username'],
+            'user_id' => $admin['id']
+        ]);
+    }
+    
+    private function logout() {
+        session_destroy();
+        sendResponse(['success' => true, 'message' => 'Logged out']);
+    }
+    
+    private function checkSession($data) {
+        $token = $data['token'] ?? '';
+        $username = validateToken($token);
+        
+        if ($username) {
+            sendResponse(['success' => true, 'username' => $username]);
+        } else {
+            sendResponse(['success' => false], 401);
+        }
+    }
+    
+    // ==================================================
+    // BERITA CRUD
+    // ==================================================
+    
+    private function getAllBerita() {
+        $berita = $this->db->getRows(
+            "SELECT id, title, description, detail, image_url, 
+                    DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') as created_at 
+             FROM berita 
+             ORDER BY created_at DESC"
+        );
+        sendResponse($berita);
+    }
+    
+    private function getBeritaById() {
+        $berita = $this->db->getRow(
+            "SELECT * FROM berita WHERE id = ?",
+            [$this->id]
+        );
+        
+        if (!$berita) {
+            sendError('Berita not found', 404);
+        }
+        
+        sendResponse($berita);
+    }
+    
+    private function createBerita($data) {
+        $required = ['title', 'description', 'detail'];
+        foreach ($required as $field) {
+            if (empty($data[$field])) {
+                sendError("Field '$field' is required", 400);
+            }
+        }
+        
+        $id = $this->db->insert(
+            "INSERT INTO berita (title, description, detail, image_url, author_id) 
+             VALUES (?, ?, ?, ?, ?)",
+            [
+                $data['title'],
+                $data['description'],
+                $data['detail'],
+                $data['image_url'] ?? null,
+                getCurrentAdminId()
+            ]
+        );
+        
+        sendResponse(['success' => true, 'id' => $id, 'message' => 'Berita created']);
+    }
+    
+    private function updateBerita($id, $data) {
+        $fields = [];
+        $params = [];
+        
+        $allowed = ['title', 'description', 'detail', 'image_url'];
+        foreach ($allowed as $field) {
+            if (isset($data[$field])) {
+                $fields[] = "$field = ?";
+                $params[] = $data[$field];
+            }
+        }
+        
+        if (empty($fields)) {
+            sendError('No fields to update', 400);
+        }
+        
+        $params[] = $id;
+        $sql = "UPDATE berita SET " . implode(', ', $fields) . " WHERE id = ?";
+        
+        $affected = $this->db->executeQuery($sql, $params);
+        sendResponse(['success' => true, 'affected' => $affected]);
+    }
+    
+    private function deleteBerita($id) {
+        $affected = $this->db->executeQuery("DELETE FROM berita WHERE id = ?", [$id]);
+        sendResponse(['success' => true, 'affected' => $affected]);
+    }
+    
+    // ==================================================
+    // REVIEW CRUD
+    // ==================================================
+    
+    private function getAllReview() {
+        $review = $this->db->getRows(
+            "SELECT id, title, rating, review_text, detail, image_url,
+                    DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') as created_at 
+             FROM review 
+             ORDER BY rating DESC, created_at DESC"
+        );
+        sendResponse($review);
+    }
+    
+    private function getReviewById() {
+        $review = $this->db->getRow("SELECT * FROM review WHERE id = ?", [$this->id]);
+        if (!$review) sendError('Review not found', 404);
+        sendResponse($review);
+    }
+    
+    private function createReview($data) {
+        $required = ['title', 'rating', 'review_text'];
+        foreach ($required as $field) {
+            if (empty($data[$field])) {
+                sendError("Field '$field' is required", 400);
+            }
+        }
+        
+        $id = $this->db->insert(
+            "INSERT INTO review (title, rating, review_text, detail, image_url, author_id) 
+             VALUES (?, ?, ?, ?, ?, ?)",
+            [
+                $data['title'],
+                $data['rating'],
+                $data['review_text'],
+                $data['detail'] ?? null,
+                $data['image_url'] ?? null,
+                getCurrentAdminId()
+            ]
+        );
+        
+        sendResponse(['success' => true, 'id' => $id]);
+    }
+    
+    private function updateReview($id, $data) {
+        $fields = [];
+        $params = [];
+        
+        $allowed = ['title', 'rating', 'review_text', 'detail', 'image_url'];
+        foreach ($allowed as $field) {
+            if (isset($data[$field])) {
+                $fields[] = "$field = ?";
+                $params[] = $data[$field];
+            }
+        }
+        
+        if (empty($fields)) {
+            sendError('No fields to update', 400);
+        }
+        
+        $params[] = $id;
+        $sql = "UPDATE review SET " . implode(', ', $fields) . " WHERE id = ?";
+        
+        $affected = $this->db->executeQuery($sql, $params);
+        sendResponse(['success' => true, 'affected' => $affected]);
+    }
+    
+    private function deleteReview($id) {
+        $affected = $this->db->executeQuery("DELETE FROM review WHERE id = ?", [$id]);
+        sendResponse(['success' => true, 'affected' => $affected]);
+    }
+    
+    // ==================================================
+    // TREND CRUD
+    // ==================================================
+    
+    private function getAllTrend() {
+        $trend = $this->db->getRows(
+            "SELECT * FROM trend ORDER BY display_order ASC"
+        );
+        sendResponse($trend);
+    }
+    
+    private function getTrendById() {
+        $trend = $this->db->getRow("SELECT * FROM trend WHERE id = ?", [$this->id]);
+        if (!$trend) sendError('Trend not found', 404);
+        sendResponse($trend);
+    }
+    
+    private function createTrend($data) {
+        $required = ['title'];
+        foreach ($required as $field) {
+            if (empty($data[$field])) {
+                sendError("Field '$field' is required", 400);
+            }
+        }
+        
+        $id = $this->db->insert(
+            "INSERT INTO trend (icon, title, trend_number, description) 
+             VALUES (?, ?, ?, ?)",
+            [
+                $data['icon'] ?? 'fas fa-chart-line',
+                $data['title'],
+                $data['trend_number'] ?? null,
+                $data['description'] ?? null
+            ]
+        );
+        
+        sendResponse(['success' => true, 'id' => $id]);
+    }
+    
+    private function updateTrend($id, $data) {
+        $fields = [];
+        $params = [];
+        
+        $allowed = ['icon', 'title', 'trend_number', 'description', 'display_order'];
+        foreach ($allowed as $field) {
+            if (isset($data[$field])) {
+                $fields[] = "$field = ?";
+                $params[] = $data[$field];
+            }
+        }
+        
+        if (empty($fields)) {
+            sendError('No fields to update', 400);
+        }
+        
+        $params[] = $id;
+        $sql = "UPDATE trend SET " . implode(', ', $fields) . " WHERE id = ?";
+        
+        $affected = $this->db->executeQuery($sql, $params);
+        sendResponse(['success' => true, 'affected' => $affected]);
+    }
+    
+    private function deleteTrend($id) {
+        $affected = $this->db->executeQuery("DELETE FROM trend WHERE id = ?", [$id]);
+        sendResponse(['success' => true, 'affected' => $affected]);
+    }
+    
+    // ==================================================
+    // BACKUP & UTILITY METHODS
+    // ==================================================
+    
+    private function getBackup() {
+        $berita = $this->db->getRows("SELECT * FROM berita");
+        $review = $this->db->getRows("SELECT * FROM review");
+        $trend = $this->db->getRows("SELECT * FROM trend");
+        
+        sendResponse([
+            'berita' => $berita,
+            'review' => $review,
+            'trend' => $trend
+        ]);
+    }
+    
+    private function getStats() {
+        $stats = $this->db->getRow("SELECT * FROM dashboard_stats");
+        sendResponse($stats);
+    }
+    
+    private function resetToDefault() {
+        // Clear existing data
+        $this->db->executeQuery("TRUNCATE TABLE berita");
+        $this->db->executeQuery("TRUNCATE TABLE review");
+        $this->db->executeQuery("TRUNCATE TABLE trend");
+        
+        // Insert default berita
+        $defaultBerita = [
+            ['Oppo Find X9 ULTRA: Kamera 200MP', 'Oppo memamerkan teknologi kamera profesional.', 'Detail lengkap Oppo Find X9 ULTRA...', 'https://cdn.phototourl.com/free/2026-06-01-86b46fc7-b0fa-4595-9d68-3ac98be05d51.webp'],
+            ['Google Pixel 10: AI Generatif di Ponsel', 'Spesifikasi Utama Google Pixel 10', 'Tensor G5 chip, kamera 48MP...', 'https://cdn.phototourl.com/free/2026-06-01-911eae52-efe6-4294-ae22-5419c45c83dc.jpg']
+        ];
+        
+        foreach ($defaultBerita as $berita) {
+            $this->db->insert(
+                "INSERT INTO berita (title, description, detail, image_url) VALUES (?, ?, ?, ?)",
+                $berita
+            );
+        }
+        
+        // Insert default review
+        $defaultReview = [
+            ['Review Samsung Galaxy S26 Ultra', 4.8, 'Kamera 200MP luar biasa jernih', 'Detail review lengkap...', 'https://placehold.co/400x250/1a1a2e/0acf83?text=Samsung+S26+Ultra'],
+            ['Review iPhone 17 Pro Max', 4.9, 'Dynamic Island, A19 Bionic', 'Detail review iPhone...', 'https://placehold.co/400x250/16213e/f4a261?text=iPhone+17+Pro+Max']
+        ];
+        
+        foreach ($defaultReview as $review) {
+            $this->db->insert(
+                "INSERT INTO review (title, rating, review_text, detail, image_url) VALUES (?, ?, ?, ?, ?)",
+                $review
+            );
+        }
+        
+        // Insert default trend
+        $defaultTrend = [
+            ['fas fa-robot', 'AI On-Device', '+245%', 'Peningkatan AI di chip HP'],
+            ['fas fa-folder-open', 'Ponsel Lipat 3', '12 Model', 'Layar lipat tiga segmen']
+        ];
+        
+        foreach ($defaultTrend as $trend) {
+            $this->db->insert(
+                "INSERT INTO trend (icon, title, trend_number, description) VALUES (?, ?, ?, ?)",
+                $trend
+            );
+        }
+        
+        sendResponse(['success' => true, 'message' => 'Data reset to default']);
     }
 }
 
-// CHECK SESSION
-elseif ($endpoint == 'check-session' && $method == 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
-    
-    $token = '';
-    if (isset($input['token'])) {
-        $token = mysqli_real_escape_string($conn, $input['token']);
-    }
-    
-    $sql = "SELECT username FROM admin WHERE session_token = '$token'";
-    $result = mysqli_query($conn, $sql);
-    $admin = mysqli_fetch_assoc($result);
-    
-    if ($admin) {
-        sendJSON(array('success' => true, 'username' => $admin['username']));
-    } else {
-        sendJSON(array('success' => false), 401);
-    }
-}
-
-// LOGOUT
-elseif ($endpoint == 'logout' && $method == 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
-    
-    $token = '';
-    if (isset($input['token'])) {
-        $token = mysqli_real_escape_string($conn, $input['token']);
-    }
-    
-    $sql = "UPDATE admin SET session_token = NULL WHERE session_token = '$token'";
-    mysqli_query($conn, $sql);
-    sendJSON(array('success' => true));
-}
-
-// ==================== BACKUP & RESET ====================
-
-// BACKUP
-elseif ($endpoint == 'backup' && $method == 'GET') {
-    $berita = mysqli_query($conn, "SELECT * FROM berita");
-    $review = mysqli_query($conn, "SELECT * FROM review");
-    $trend = mysqli_query($conn, "SELECT * FROM trend");
-    
-    $data = array(
-        'berita' => mysqli_fetch_all($berita, MYSQLI_ASSOC),
-        'review' => mysqli_fetch_all($review, MYSQLI_ASSOC),
-        'trend' => mysqli_fetch_all($trend, MYSQLI_ASSOC)
-    );
-    sendJSON($data);
-}
-
-// RESET DEFAULT
-elseif ($endpoint == 'reset-default' && $method == 'POST') {
-    mysqli_query($conn, "DELETE FROM berita");
-    mysqli_query($conn, "DELETE FROM review");
-    mysqli_query($conn, "DELETE FROM trend");
-    
-    mysqli_query($conn, "ALTER TABLE berita AUTO_INCREMENT = 1");
-    mysqli_query($conn, "ALTER TABLE review AUTO_INCREMENT = 1");
-    mysqli_query($conn, "ALTER TABLE trend AUTO_INCREMENT = 1");
-    
-    sendJSON(array('success' => true));
-}
-
-// ==================== ROOT ====================
-elseif ($endpoint == '') {
-    sendJSON(array(
-        'status' => 'success',
-        'message' => 'YSCELLGADGET API is running',
-        'database' => $db,
-        'endpoints' => array(
-            'GET ?endpoint=berita' => 'Get all berita',
-            'GET ?endpoint=berita&id=1' => 'Get berita by ID',
-            'POST ?endpoint=berita' => 'Create berita',
-            'PUT ?endpoint=berita&id=1' => 'Update berita',
-            'DELETE ?endpoint=berita&id=1' => 'Delete berita',
-            'GET ?endpoint=review' => 'Get all review',
-            'GET ?endpoint=trend' => 'Get all trend',
-            'POST ?endpoint=login' => 'Admin login'
-        )
-    ));
-}
-
-// 404
-else {
-    sendJSON(array('error' => 'Endpoint not found: ' . $endpoint), 404);
-}
-
-// Tutup koneksi
-mysqli_close($conn);
+// Run API
+$api = new API();
+$api->handle();
 ?>

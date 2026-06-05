@@ -1,5 +1,5 @@
 // Ganti API_BASE di awal script.js
-const API_BASE = '/yscellgadget/api.php';
+const API_BASE = '/api.php';
 
 // Ganti fungsi fetchAPI
 async function fetchAPI(endpoint) {
